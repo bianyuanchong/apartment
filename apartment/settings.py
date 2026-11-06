@@ -10,10 +10,44 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import json
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _postgres_from_creds() -> dict:
+    creds_path = BASE_DIR / "creds" / "database.json"
+    creds = json.loads(creds_path.read_text(encoding="utf-8"))["localhost"]
+    return {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": creds["dbname"],
+        "USER": creds["user"],
+        "PASSWORD": creds["password"],
+        "HOST": creds.get("host", "localhost"),
+        "PORT": creds.get("port", 5432),
+    }
+
+
+_CARTO_RASTER_STYLES = {
+    "voyager": "https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key={key}",
+    "dark_all": "https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key={key}",
+}
+
+
+def _carto_raster_tile_url() -> str | None:
+    creds_path = BASE_DIR / "creds" / "carto.json"
+    if not creds_path.is_file():
+        return None
+    creds = json.loads(creds_path.read_text(encoding="utf-8"))
+    key = (creds.get("api_key") or "").strip()
+    if not key:
+        return None
+    style = (creds.get("style") or "voyager").strip()
+    template = _CARTO_RASTER_STYLES.get(style, _CARTO_RASTER_STYLES["voyager"])
+    # Leaflet needs literal {z}/{x}/{y}; do not use str.format on the whole URL.
+    return template.replace("{key}", key)
 
 
 # Quick-start development settings - unsuitable for production
@@ -25,7 +59,7 @@ SECRET_KEY = 'django-insecure-wfsxu_jnw!2=tk8ie8iyn()_#w2hr+sgv-n(k+@w@hybzwggw_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -37,6 +71,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'dashboard',
 ]
 
 MIDDLEWARE = [
@@ -73,10 +108,7 @@ WSGI_APPLICATION = 'apartment.wsgi.application'
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': _postgres_from_creds(),
 }
 
 
@@ -125,3 +157,6 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+# Dashboard map (Leaflet); None → Esri fallback in template
+CARTO_RASTER_TILE_URL = _carto_raster_tile_url()

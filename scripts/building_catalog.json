@@ -1,0 +1,252 @@
+{
+  "livingston-terrace": {
+    "name": "Livingston Terrace",
+    "address": "440 Livingston Ave, New Brunswick, NJ 08901",
+    "zip": "08901"
+  },
+  "premiere": {
+    "name": "Premiere Residences",
+    "address": "7 Livingston Ave, New Brunswick, NJ 08901",
+    "zip": "08901"
+  },
+  "raritan-crossing": {
+    "name": "Raritan Crossing",
+    "address": "18 Regency Manor Dr, New Brunswick, NJ 08901",
+    "zip": "08901"
+  },
+  "renaissance": {
+    "name": "Renaissance Plaza Square",
+    "address": "1 Richmond St, New Brunswick, NJ 08901",
+    "zip": "08901"
+  },
+  "rockrose--110-horatio-street": {
+    "name": "110 Horatio Street",
+    "address": "110 Horatio Street, New York, NY 10014",
+    "zip": "10014"
+  },
+  "rockrose--200-water-street": {
+    "name": "200 Water Street",
+    "address": "200 Water Street, New York, NY 10038",
+    "zip": "10038"
+  },
+  "rockrose--47-05-center-boulevard": {
+    "name": "47-05 Center Boulevard",
+    "address": "47-05 Center Boulevard, Long Island City, NY 11109",
+    "zip": "11109"
+  },
+  "rockrose--eagle-lofts": {
+    "name": "Eagle Lofts",
+    "address": "43-22 Queens Street, Long Island City, NY 11101",
+    "zip": "11101"
+  },
+  "rockrose--hayden": {
+    "name": "Hayden",
+    "address": "43-25 Hunter Street, Long Island City, NY 11101",
+    "zip": "11101"
+  },
+  "rockrose--linc-lic": {
+    "name": "Linc LIC",
+    "address": "43-10 Crescent Street, Long Island City, NY 11101",
+    "zip": "11101"
+  },
+  "rockrose--lyra": {
+    "name": "Lyra",
+    "address": "555 West 38th Street, New York, NY 10018",
+    "zip": "10018"
+  },
+  "rockrose--midwest-court": {
+    "name": "Midwest Court",
+    "address": "410 West 53rd Street, New York, NY 10019",
+    "zip": "10019"
+  },
+  "rockrose--the-archive": {
+    "name": "The Archive",
+    "address": "666 Greenwich Street, New York, NY 10014",
+    "zip": "10014"
+  },
+  "rockrose--the-cove": {
+    "name": "The Cove",
+    "address": "43-12 Hunter Street, Long Island City, NY 11101",
+    "zip": "11101"
+  },
+  "rockrose--the-everly": {
+    "name": "The Everly",
+    "address": "180 Ashland Place, Brooklyn, NY 11217",
+    "zip": "11217"
+  },
+  "rockrose--tribeca-pointe": {
+    "name": "Tribeca Pointe",
+    "address": "41 River Terrace, New York, NY 10282",
+    "zip": "10282"
+  },
+  "securecafe--blueberry-village": {
+    "name": "Blueberry Village",
+    "address": "11 Brunswick Ave, Edison, NJ 08817",
+    "zip": "08817"
+  },
+  "securecafe--durham-woods": {
+    "name": "Durham Woods",
+    "address": "32 N. Reading Road, Edison, NJ 08817",
+    "zip": "08817"
+  },
+  "securecafe--edison-lights": {
+    "name": "Edison Lights",
+    "address": "3014 Yosko Drive, Edison, NJ 08817",
+    "zip": "08817"
+  },
+  "securecafe--edison-village": {
+    "name": "Edison Village",
+    "address": "434 Forest Drive, Edison, NJ 08817",
+    "zip": "08817"
+  },
+  "securecafe--edison-woods": {
+    "name": "Edison Woods",
+    "address": "1000 US Highway 1, Edison, NJ 08817",
+    "zip": "08817"
+  },
+  "securecafe--hidden-valley": {
+    "name": "Hidden Valley",
+    "address": "201 Hidden Valley Drive, Edison, NJ 08820",
+    "zip": "08820"
+  },
+  "securecafe--hilltop-estates": {
+    "name": "Hilltop Estates",
+    "address": "1 Dayton Drive, Edison, NJ 08820",
+    "zip": "08820"
+  },
+  "securecafe--hilltop-manor": {
+    "name": "Hilltop Manor",
+    "address": "1 Dayton Drive, Edison, NJ 08820",
+    "zip": "08820"
+  },
+  "securecafe--millbrook-village": {
+    "name": "Millbrook Village",
+    "address": "97 Horizon Drive, Edison, NJ 08817",
+    "zip": "08817"
+  },
+  "securecafe--millbrook-village-north": {
+    "name": "Millbrook Village North",
+    "address": "1 Sunrise Drive, Edison, NJ 08817",
+    "zip": "08817"
+  },
+  "securecafe--rivendell-heights": {
+    "name": "Rivendell Heights",
+    "address": "10 Yosko Drive, Edison, NJ 08854",
+    "zip": "08854"
+  },
+  "securecafe--rivendell-meadows": {
+    "name": "Rivendell Meadows",
+    "address": "1100 Meadows Drive, Piscataway, NJ 08854",
+    "zip": "08854"
+  },
+  "securecafe--rivendell-village": {
+    "name": "Rivendell Village",
+    "address": "1100 Meadows Drive, Piscataway, NJ 08854",
+    "zip": "08854"
+  },
+  "securecafe--rivendell-at-edison": {
+    "name": "Rivendell at Edison",
+    "address": "10 Rivendell Way, Edison, NJ 08854",
+    "zip": "08854"
+  },
+  "securecafe--talmadge-village": {
+    "name": "Talmadge Village",
+    "address": "5 Shetland Court, Edison, NJ 08817",
+    "zip": "08817"
+  },
+  "securecafe--trafalgar": {
+    "name": "Trafalgar",
+    "address": "1 Dayton Drive, Edison, NJ 08820",
+    "zip": "08820"
+  },
+  "securecafe--village-court": {
+    "name": "Village Court",
+    "address": "442 Talmadge Road, Edison, NJ 08820",
+    "zip": "08820"
+  },
+  "skyline-tower": {
+    "name": "Skyline Tower",
+    "address": "60 Paterson St, New Brunswick, NJ 08901",
+    "zip": "08901"
+  },
+  "sven": {
+    "name": "Sven",
+    "address": "27-29 Queens Plaza North, Long Island City, NY 11101",
+    "zip": "11101"
+  },
+  "tf-cornerstone--2-20-malt-drive": {
+    "name": "2-20 Malt Drive",
+    "address": "2-20 Malt Drive, Long Island City, NY 11101",
+    "zip": "11101"
+  },
+  "tf-cornerstone--2-21-malt-drive": {
+    "name": "2-21 Malt Drive",
+    "address": "2-21 Malt Drive, Long Island City, NY 11101",
+    "zip": "11101"
+  },
+  "tf-cornerstone--4540-center-blvd": {
+    "name": "4540 Center Boulevard",
+    "address": "4540 Center Blvd, Long Island City, NY 11109",
+    "zip": "11109"
+  },
+  "tf-cornerstone--4545-center-blvd": {
+    "name": "4545 Center Boulevard",
+    "address": "4545 Center Blvd, Long Island City, NY 11109",
+    "zip": "11109"
+  },
+  "tf-cornerstone--4610-center-blvd": {
+    "name": "4610 Center Boulevard",
+    "address": "4610 Center Blvd, Long Island City, NY 11109",
+    "zip": "11109"
+  },
+  "tf-cornerstone--4615-center-blvd": {
+    "name": "4615 Center Boulevard",
+    "address": "4615 Center Blvd, Long Island City, NY 11109",
+    "zip": "11109"
+  },
+  "tf-cornerstone--4720-center-blvd": {
+    "name": "4720 Center Boulevard",
+    "address": "4720 Center Blvd, Long Island City, NY 11109",
+    "zip": "11109"
+  },
+  "tf-cornerstone--5203-center-blvd": {
+    "name": "5203 Center Boulevard",
+    "address": "5203 Center Blvd, Long Island City, NY 11101",
+    "zip": "11101"
+  },
+  "tf-cornerstone--5241-center-blvd": {
+    "name": "5241 Center Boulevard",
+    "address": "5241 Center Blvd, Long Island City, NY 11101",
+    "zip": "11101"
+  },
+  "the-brunswick": {
+    "name": "The Brunswick",
+    "address": "100 Hiram Sq, New Brunswick, NJ 08901",
+    "zip": "08901"
+  },
+  "the-edge": {
+    "name": "The Edge at Raritan Heights",
+    "address": "11 US Highway 1, New Brunswick, NJ 08901",
+    "zip": "08901"
+  },
+  "the-george": {
+    "name": "The George",
+    "address": "285-287 George St, New Brunswick, NJ 08901",
+    "zip": "08901"
+  },
+  "the-quincy": {
+    "name": "The Quincy",
+    "address": "120 Neilson St, New Brunswick, NJ 08901",
+    "zip": "08901"
+  },
+  "the-raye": {
+    "name": "The Raye",
+    "address": "1000 Vermella Dr, New Brunswick, NJ 08901",
+    "zip": "08901"
+  },
+  "the-vue": {
+    "name": "The Vue",
+    "address": "110 Somerset St, New Brunswick, NJ 08901",
+    "zip": "08901"
+  }
+}

@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Apartment Dashboard</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --border: #2d3a4f;
+      --text: #e7ecf3;
+      --muted: #8b9cb3;
+      --accent: #3b82f6;
+      --accent-dim: #2563eb33;
+      --hover: #243044;
+      --topbar-h: 3.25rem;
+      --sidebar-w: min(420px, 40vw);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+    }
+    .hidden { display: none !important; }
+
+    .topbar {
+      height: var(--topbar-h);
+      padding: 0 1rem 0 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .topbar-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      min-width: 0;
+    }
+    .topbar-brand h1 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .topbar-summary {
+      margin: 0;
+      font-size: 0.78rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .topbar-summary .warn { color: #fbbf24; }
+    .row-meta.stale { color: #f87171; }
+    .topbar-actions { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+    .btn-icon {
+      position: relative;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .btn-icon:hover { background: var(--hover); }
+    .badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 1.1rem;
+      height: 1.1rem;
+      padding: 0 0.25rem;
+      border-radius: 999px;
+      background: #f87171;
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .badge.show { display: flex; }
+
+    .workspace {
+      display: flex;
+      height: calc(100vh - var(--topbar-h));
+    }
+    .map-pane {
+      flex: 1;
+      min-width: 0;
+      position: relative;
+      background: #0a0e14;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+    .map-tip {
+      position: absolute;
+      left: 0.75rem;
+      bottom: 0.75rem;
+      z-index: 500;
+      background: rgba(26, 35, 50, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.4rem 0.65rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .explore-pane {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      border-left: 1px solid var(--border);
+      background: var(--panel);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .explore-head {
+      padding: 0.85rem 1rem 0.65rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .explore-head h2 {
+      margin: 0 0 0.35rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    .explore-lead {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .crumb {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      margin-top: 0.65rem;
+      font-size: 0.78rem;
+    }
+    .crumb button {
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      padding: 0;
+      cursor: pointer;
+      font-size: inherit;
+    }
+    .crumb button:hover { text-decoration: underline; }
+    .crumb .sep { color: var(--muted); }
+    .crumb .current { color: var(--text); }
+
+    .explore-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+    .explore-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .explore-list li button.row-btn {
+      width: 100%;
+      text-align: left;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.75rem 0.85rem;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .explore-list li button.row-btn:hover {
+      background: var(--hover);
+      border-color: #3b82f688;
+    }
+    .explore-list li button.row-btn.active {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    .row-title { display: block; font-weight: 600; }
+    .row-meta {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+    .empty-state {
+      padding: 2rem 1rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    .unit-detail {
+      padding: 0.75rem 1rem 1.25rem;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+      overflow-y: auto;
+      max-height: 55%;
+    }
+    .unit-detail h3 {
+      margin: 0 0 0.25rem;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    .unit-detail .sub {
+      margin: 0 0 0.85rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .chart-wrap {
+      height: 200px;
+      background: var(--panel);
+      border-radius: 10px;
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      margin-bottom: 0.85rem;
+    }
+    .alert-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: end;
+      font-size: 0.82rem;
+    }
+    .alert-inline label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      color: var(--muted);
+      flex: 1;
+      min-width: 100px;
+    }
+    .alert-inline input, .alert-inline select {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.45rem 0.5rem;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-primary:hover { filter: brightness(1.06); }
+    .form-msg { width: 100%; font-size: 0.78rem; color: var(--muted); margin: 0.35rem 0 0; }
+
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 900;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .drawer-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(440px, 100vw);
+      height: 100vh;
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      z-index: 901;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .drawer.open { transform: translateX(0); }
+    .drawer-head {
+      padding: 1rem 1.15rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 0.75rem;
+    }
+    .drawer-head h2 { margin: 0; font-size: 1.05rem; }
+    .drawer-sub { margin: 0.25rem 0 0; font-size: 0.78rem; color: var(--muted); }
+    .drawer-close {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 0.35rem 0.55rem;
+      cursor: pointer;
+    }
+    .drawer-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+    .drawer-tabs button {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 0.65rem;
+      font-size: 0.82rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+    .drawer-tabs button.active {
+      color: var(--text);
+      border-bottom-color: var(--accent);
+    }
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+    .alert-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .alert-list li {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .alert-list li.triggered { border-color: #f8717166; }
+    .alert-list li button {
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      padding: 0.65rem 0.75rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .alert-list li button:hover { background: var(--hover); }
+    .alert-list .meta {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.15rem;
+    }
+    .alert-list .row-actions {
+      display: flex;
+      justify-content: flex-end;
+      padding: 0 0.5rem 0.5rem;
+    }
+    .alert-list .row-actions button {
+      width: auto;
+      font-size: 0.72rem;
+      color: var(--muted);
+      padding: 0.2rem 0.45rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+    .delta-down { color: #4ade80; }
+    .delta-up { color: #f87171; }
+
+    .leaflet-popup-content-wrapper {
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 8px;
+    }
+    .leaflet-popup-tip { background: var(--panel); }
+    .leaflet-container { font-family: inherit; }
+
+    @media (max-width: 820px) {
+      body { overflow: auto; height: auto; min-height: 100vh; }
+      .workspace { flex-direction: column; height: auto; min-height: calc(100vh - var(--topbar-h)); }
+      .map-pane { height: min(52vh, 480px); }
+      .explore-pane { width: 100%; border-left: none; border-top: 1px solid var(--border); min-height: 360px; }
+      .unit-detail { max-height: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-brand">
+      <h1>Rent portfolio</h1>
+      <p class="topbar-summary" id="header-summary">Loading…</p>
+    </div>
+    <div class="topbar-actions">
+      <button type="button" class="btn-icon" id="btn-feed" aria-label="Feed ingest status">
+        Feed
+        <span class="badge" id="feed-badge">0</span>
+      </button>
+      <button type="button" class="btn-icon" id="btn-alerts" aria-label="Price alerts">
+        Alerts
+        <span class="badge" id="alert-badge">0</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <div class="map-pane">
+      <div id="map"></div>
+      <div class="map-tip">Tap a shaded ZIP or building pin to browse units</div>
+    </div>
+
+    <aside class="explore-pane">
+      <div class="explore-head">
+        <h2 id="explore-title">Choose an area</h2>
+        <p class="explore-lead" id="explore-lead">Pick a ZIP on the map or from the list below.</p>
+        <nav class="crumb hidden" id="crumb" aria-label="Location"></nav>
+      </div>
+      <div class="explore-body">
+        <ul class="explore-list" id="explore-list"></ul>
+      </div>
+      <div class="unit-detail hidden" id="unit-detail">
+        <h3 id="unit-detail-title">Unit</h3>
+        <p class="sub" id="unit-detail-sub"></p>
+        <div class="chart-wrap">
+          <canvas id="rent-chart"></canvas>
+        </div>
+        <div class="alert-inline">
+          <label>Notify when rent is
+            <select id="alert-direction">
+              <option value="below">at or below</option>
+              <option value="above">at or above</option>
+            </select>
+          </label>
+          <label>Target ($)
+            <input type="number" id="alert-target" min="1" step="50" placeholder="3500" />
+          </label>
+          <button type="button" class="btn-primary" id="alert-save">Save alert</button>
+        </div>
+        <p class="form-msg" id="alert-form-msg"></p>
+      </div>
+    </aside>
+  </div>
+
+  <div class="drawer-backdrop" id="drawer-backdrop"></div>
+  <aside class="drawer" id="feed-drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div>
+        <h2>Feed ingest</h2>
+        <p class="drawer-sub" id="feed-drawer-sub">Per-building last_feed_date from daily_sync</p>
+      </div>
+      <button type="button" class="drawer-close" id="feed-drawer-close">Close</button>
+    </div>
+    <div class="drawer-body">
+      <ul class="alert-list" id="feed-stale-list"></ul>
+    </div>
+  </aside>
+
+  <aside class="drawer" id="alert-drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div>
+        <h2>Price alerts</h2>
+        <p class="drawer-sub" id="alert-date-range">Latest snapshots</p>
+      </div>
+      <button type="button" class="drawer-close" id="drawer-close">Close</button>
+    </div>
+    <div class="drawer-tabs">
+      <button type="button" class="active" data-alert-tab="changes">Recent changes</button>
+      <button type="button" data-alert-tab="watch">Watchlist</button>
+    </div>
+    <div class="drawer-body">
+      <ul class="alert-list" id="alert-changes-list"></ul>
+      <ul class="alert-list hidden" id="alert-watch-list"></ul>
+    </div>
+  </aside>
+
+  {{ carto_tile_url|json_script:"carto-tile-url" }}
+  <script>
+    let chartInstance = null;
+    let selectedZip = null;
+    let selectedApartmentId = null;
+    let selectedApartmentName = null;
+    let selectedUnitNumber = null;
+    let exploreStep = "areas";
+    let zipRows = [];
+    let feedHealth = null;
+    let alertPayload = { changes: [], watchlist: [], triggered_count: 0 };
+
+    let map = null;
+    let zipLayer = null;
+    let aptLayer = null;
+    const aptMarkerById = new Map();
+    const zipPolygonByCode = new Map();
+    let zipMaxUnits = 1;
+    let coverageBounds = null;
+
+    function csrfToken() {
+      const m = document.cookie.match(/csrftoken=([^;]+)/);
+      return m ? decodeURIComponent(m[1]) : "";
+    }
+
+    function fmtMoney(v) {
+      if (v == null || v === "") return "—";
+      return "$" + Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 });
+    }
+
+    async function fetchJson(url, options) {
+      const res = await fetch(url, options);
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    function setExploreList(items, renderItem, emptyHtml) {
+      const ul = document.getElementById("explore-list");
+      ul.innerHTML = "";
+      if (!items.length) {
+        ul.innerHTML = `<li class="empty-state">${emptyHtml}</li>`;
+        return;
+      }
+      items.forEach((item) => {
+        const li = document.createElement("li");
+        li.appendChild(renderItem(item));
+        ul.appendChild(li);
+      });
+    }
+
+    function updateExploreChrome() {
+      const title = document.getElementById("explore-title");
+      const lead = document.getElementById("explore-lead");
+      const crumb = document.getElementById("crumb");
+      const detail = document.getElementById("unit-detail");
+
+      if (exploreStep === "areas") {
+        title.textContent = "Choose an area";
+        lead.textContent = "ZIP regions where you track listings.";
+        crumb.classList.add("hidden");
+        detail.classList.add("hidden");
+      } else if (exploreStep === "buildings") {
+        title.textContent = selectedZip || "Buildings";
+        lead.textContent = "Select a building to see units.";
+        crumb.classList.remove("hidden");
+        detail.classList.add("hidden");
+      } else if (exploreStep === "units") {
+        title.textContent = selectedApartmentName || "Units";
+        lead.textContent = "Select a unit for rent history and alerts.";
+        crumb.classList.remove("hidden");
+        detail.classList.add("hidden");
+      }
+      renderBreadcrumb();
+    }
+
+    function renderBreadcrumb() {
+      const el = document.getElementById("crumb");
+      el.innerHTML = "";
+      const parts = [];
+
+      const home = document.createElement("button");
+      home.type = "button";
+      home.textContent = "All areas";
+      home.addEventListener("click", () => goAreas());
+      parts.push(home);
+
+      if (selectedZip && exploreStep !== "areas") {
+        parts.push(document.createTextNode(""));
+        const sep1 = spanSep();
+        const zBtn = document.createElement("button");
+        zBtn.type = "button";
+        zBtn.textContent = selectedZip;
+        if (exploreStep === "buildings") {
+          const cur = document.createElement("span");
+          cur.className = "current";
+          cur.textContent = selectedZip;
+          parts.push(sep1, cur);
+        } else {
+          zBtn.addEventListener("click", () => selectZip(selectedZip, null));
+          parts.push(sep1, zBtn);
+        }
+      }
+
+      if (selectedApartmentName && exploreStep === "units") {
+        parts.push(spanSep());
+        const cur = document.createElement("span");
+        cur.className = "current";
+        cur.textContent = selectedApartmentName;
+        parts.push(cur);
+      }
+
+      parts.forEach((p) => el.appendChild(p));
+    }
+
+    function spanSep() {
+      const s = document.createElement("span");
+      s.className = "sep";
+      s.textContent = "›";
+      return s;
+    }
+
+    function goAreas() {
+      exploreStep = "areas";
+      selectedZip = null;
+      selectedApartmentId = null;
+      selectedApartmentName = null;
+      selectedUnitNumber = null;
+      highlightZipOnMap(null);
+      highlightApartmentOnMap(null);
+      updateExploreChrome();
+      renderAreas();
+    }
+
+    function renderAreas() {
+      setExploreList(
+        zipRows,
+        (row) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "row-btn";
+          btn.innerHTML =
+            `<span class="row-title">ZIP ${row.zip}</span>` +
+            `<span class="row-meta">${row.apartment_count} buildings · ${row.unit_count} units tracked</span>`;
+          btn.addEventListener("click", () => selectZip(row.zip, btn));
+          return btn;
+        },
+        "No coverage data yet."
+      );
+    }
+
+    function initMap() {
+      map = L.map("map", { scrollWheelZoom: true }).setView([40.72, -74.05], 10);
+      const cartoTileUrl = JSON.parse(document.getElementById("carto-tile-url").textContent);
+      const tileOpts = { maxZoom: 19 };
+      if (cartoTileUrl) {
+        tileOpts.attribution =
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CARTO';
+        L.tileLayer(cartoTileUrl, tileOpts).addTo(map);
+      } else {
+        tileOpts.maxZoom = 16;
+        tileOpts.attribution = 'Tiles &copy; Esri';
+        L.tileLayer(
+          "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+          tileOpts
+        ).addTo(map);
+      }
+      zipLayer = L.layerGroup().addTo(map);
+      aptLayer = L.layerGroup().addTo(map);
+      window.addEventListener("resize", () => map?.invalidateSize());
+    }
+
+    function refreshMapSize() {
+      map?.invalidateSize();
+    }
+
+    function zipPolygonStyle(props, selected) {
+      if (!props.tracked) {
+        return {
+          color: selected ? "#64748b" : "#334155",
+          weight: selected ? 1.4 : 0.75,
+          fillColor: "#1e293b",
+          fillOpacity: selected ? 0.45 : 0.22,
+        };
+      }
+      const units = props.unit_count || 0;
+      const t = zipMaxUnits ? units / zipMaxUnits : 0;
+      return {
+        color: selected ? "#93c5fd" : "#60a5fa",
+        weight: selected ? 2.5 : 1.2,
+        fillColor: "#3b82f6",
+        fillOpacity: selected ? 0.28 + t * 0.4 : 0.1 + t * 0.35,
+      };
+    }
+
+    function highlightZipOnMap(zip) {
+      zipPolygonByCode.forEach((layer, z) => {
+        const props = layer.feature?.properties || {};
+        layer.setStyle(zipPolygonStyle(props, zip != null && z === zip));
+      });
+    }
+
+    function highlightApartmentOnMap(apartmentId) {
+      aptMarkerById.forEach((marker, id) => {
+        const el = marker.getElement();
+        if (!el) return;
+        el.style.filter =
+          apartmentId != null && id === apartmentId
+            ? "brightness(1.35) drop-shadow(0 0 6px #3b82f6)"
+            : "";
+      });
+    }
+
+    async function loadMap() {
+      const data = await fetchJson("/api/map/");
+      zipLayer.clearLayers();
+      aptLayer.clearLayers();
+      zipPolygonByCode.clear();
+      aptMarkerById.clear();
+      coverageBounds = null;
+
+      const cov = data.coverage;
+      if (cov?.features?.length) {
+        zipMaxUnits = Math.max(...cov.features.map((f) => f.properties?.unit_count || 0), 1);
+        const geo = L.geoJSON(cov, {
+          style: (feature) => zipPolygonStyle(feature.properties, false),
+          onEachFeature: (feature, layer) => {
+            const p = feature.properties;
+            zipPolygonByCode.set(p.zip, layer);
+            if (p.tracked) {
+              layer.bindPopup(
+                `<strong>${p.zip}</strong><br>${p.apartment_count} buildings · ${p.unit_count} units`
+              );
+              layer.on("click", () => selectZip(p.zip, null));
+            } else {
+              layer.bindPopup(`<strong>${p.zip}</strong><br>Not in your feed`);
+            }
+          },
+        });
+        geo.addTo(zipLayer);
+        coverageBounds = geo.getBounds();
+      }
+
+      data.apartments.forEach((a) => {
+        const marker = L.circleMarker([a.lat, a.lng], {
+          radius: 6,
+          color: "#22c55e",
+          weight: 2,
+          fillColor: "#1e293b",
+          fillOpacity: 0.95,
+        });
+        marker.bindPopup(`<strong>${a.name}</strong><br>${a.unit_count} units`);
+        marker.on("click", () => {
+          if (a.zip) selectZip(a.zip, null).then(() => selectApartment(a.apartment_id, a.name, null));
+        });
+        marker.addTo(aptLayer);
+        aptMarkerById.set(a.apartment_id, marker);
+      });
+
+      if (coverageBounds?.isValid()) {
+        map.fitBounds(coverageBounds, { padding: [32, 32], maxZoom: 11 });
+      }
+      refreshMapSize();
+      requestAnimationFrame(refreshMapSize);
+    }
+
+    function fmtFeedDate(d) {
+      if (!d) return "never";
+      return String(d).slice(0, 10);
+    }
+
+    function buildingFeedMeta(apt) {
+      const latest = feedHealth?.latest_feed_date;
+      const fd = fmtFeedDate(apt.last_feed_date);
+      const n = apt.last_feed_unit_count != null ? apt.last_feed_unit_count : "—";
+      const label = `Last feed ${fd} · ${n} units`;
+      const stale = !latest || apt.last_feed_date !== latest;
+      return stale
+        ? `<span class="row-meta stale">${label}</span>`
+        : `<span class="row-meta">${label}</span>`;
+    }
+
+    function renderFeedDrawer() {
+      const ul = document.getElementById("feed-stale-list");
+      const sub = document.getElementById("feed-drawer-sub");
+      ul.innerHTML = "";
+      if (!feedHealth?.latest_feed_date) {
+        sub.textContent = "No daily_feed snapshots in database yet.";
+        ul.innerHTML = '<li class="empty-state">Run scripts/daily_sync.py after Muse uploads unit_daily_feed.json.</li>';
+        return;
+      }
+      const latest = fmtFeedDate(feedHealth.latest_feed_date);
+      sub.textContent =
+        `Latest snapshot ${latest} · ${feedHealth.updated_on_latest}/${feedHealth.active_count} active buildings updated`;
+      const stale = feedHealth.stale_active || [];
+      if (!stale.length) {
+        ul.innerHTML = `<li class="empty-state">All active buildings appear in ${latest} feed.</li>`;
+        return;
+      }
+      stale.forEach((b) => {
+        const li = document.createElement("li");
+        li.innerHTML =
+          `<strong>#${b.apartment_id} · ${b.name}</strong><br>` +
+          `<span class="row-meta stale">Last feed ${fmtFeedDate(b.last_feed_date)}` +
+          (b.last_feed_unit_count != null ? ` · ${b.last_feed_unit_count} units` : "") +
+          `</span>`;
+        ul.appendChild(li);
+      });
+    }
+
+    async function loadSummary() {
+      const data = await fetchJson("/api/summary/");
+      zipRows = data.by_zip || [];
+      feedHealth = data.feed_health || null;
+      const fh = feedHealth;
+      let summary =
+        `${data.apartment_count} buildings · ${data.zip_count} ZIPs · ${data.unit_count} units in feed`;
+      if (fh?.latest_feed_date) {
+        summary += ` · feed ${fmtFeedDate(fh.latest_feed_date)} · ${fh.updated_on_latest}/${fh.active_count} buildings OK`;
+        if (fh.stale_active_count > 0) {
+          summary += ` · ${fh.stale_active_count} stale`;
+        }
+      }
+      document.getElementById("header-summary").textContent = summary;
+      const feedBadge = document.getElementById("feed-badge");
+      const staleN = fh?.stale_active_count || 0;
+      feedBadge.textContent = String(staleN);
+      feedBadge.style.display = staleN > 0 ? "" : "none";
+      renderFeedDrawer();
+      if (exploreStep === "areas") renderAreas();
+    }
+
+    async function selectZip(zip, btn) {
+      selectedZip = zip;
+      selectedApartmentId = null;
+      selectedApartmentName = null;
+      selectedUnitNumber = null;
+      exploreStep = "buildings";
+      highlightZipOnMap(zip);
+      highlightApartmentOnMap(null);
+      updateExploreChrome();
+
+      document.querySelectorAll("#explore-list .row-btn.active").forEach((b) => b.classList.remove("active"));
+      if (btn) btn.classList.add("active");
+
+      const data = await fetchJson(`/api/zip/${encodeURIComponent(zip)}/`);
+      setExploreList(
+        data.apartments,
+        (apt) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "row-btn";
+          b.innerHTML =
+            `<span class="row-title">${apt.name}</span>` +
+            buildingFeedMeta(apt) +
+            `<span class="row-meta">${apt.unit_count} units with rent data</span>`;
+          b.addEventListener("click", () => selectApartment(apt.apartment_id, apt.name, b));
+          return b;
+        },
+        "No buildings in this ZIP."
+      );
+    }
+
+    async function selectApartment(apartmentId, apartmentName, btn) {
+      selectedApartmentId = apartmentId;
+      selectedApartmentName = apartmentName || selectedApartmentName;
+      selectedUnitNumber = null;
+      exploreStep = "units";
+      highlightApartmentOnMap(apartmentId);
+      updateExploreChrome();
+      document.getElementById("unit-detail").classList.add("hidden");
+
+      document.querySelectorAll("#explore-list .row-btn.active").forEach((b) => b.classList.remove("active"));
+      if (btn) btn.classList.add("active");
+
+      const data = await fetchJson(`/api/apartment/${apartmentId}/units/`);
+      if (!selectedApartmentName) selectedApartmentName = data.apartment.name;
+
+      setExploreList(
+        data.units,
+        (u) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "row-btn";
+          const rent =
+            u.latest_rent_min != null
+              ? fmtMoney(u.latest_rent_min) +
+                (u.latest_rent_max != null && u.latest_rent_max !== u.latest_rent_min
+                  ? " – " + fmtMoney(u.latest_rent_max)
+                  : "")
+              : "Rent unknown";
+          b.innerHTML =
+            `<span class="row-title">${u.unit_number}</span>` +
+            `<span class="row-meta">${rent}${u.latest_seen_date ? " · updated " + u.latest_seen_date : ""}</span>`;
+          b.addEventListener("click", () => selectUnit(apartmentId, u.unit_number, b));
+          return b;
+        },
+        "No units yet for this building."
+      );
+    }
+
+    async function selectUnit(apartmentId, unitNumber, btn) {
+      selectedUnitNumber = unitNumber;
+      document.querySelectorAll("#explore-list .row-btn.active").forEach((b) => b.classList.remove("active"));
+      if (btn) btn.classList.add("active");
+
+      const q = new URLSearchParams({ unit_number: unitNumber });
+      const data = await fetchJson(`/api/apartment/${apartmentId}/history/?${q}`);
+
+      const detail = document.getElementById("unit-detail");
+      detail.classList.remove("hidden");
+      document.getElementById("unit-detail-title").textContent = unitNumber;
+      document.getElementById("unit-detail-sub").textContent =
+        `${selectedApartmentName} · ${data.history.length} daily snapshots`;
+      document.getElementById("alert-form-msg").textContent = "";
+
+      const latest = data.history.length ? data.history[data.history.length - 1] : null;
+      if (latest?.rent_min != null) {
+        document.getElementById("alert-target").placeholder = String(Math.round(latest.rent_min));
+      }
+
+      const labels = data.history.map((h) => h.as_of_date);
+      const rentMin = data.history.map((h) => h.rent_min);
+      const rentMax = data.history.map((h) => h.rent_max);
+
+      const ctx = document.getElementById("rent-chart");
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Rent min",
+              data: rentMin,
+              borderColor: "#3b82f6",
+              backgroundColor: "#3b82f633",
+              tension: 0.15,
+              spanGaps: true,
+            },
+            {
+              label: "Rent max",
+              data: rentMax,
+              borderColor: "#94a3b8",
+              borderDash: [4, 4],
+              tension: 0.15,
+              spanGaps: true,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: "#8b9cb3", boxWidth: 10 } },
+          },
+          scales: {
+            x: { ticks: { color: "#8b9cb3", maxTicksLimit: 6 }, grid: { color: "#2d3a4f" } },
+            y: {
+              ticks: { color: "#8b9cb3", callback: (v) => "$" + v },
+              grid: { color: "#2d3a4f" },
+            },
+          },
+        },
+      });
+      detail.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function renderAlertChanges(changes) {
+      const ul = document.getElementById("alert-changes-list");
+      ul.innerHTML = "";
+      if (!changes.length) {
+        ul.innerHTML =
+          '<li class="empty-state">No rent changes between the last two snapshot days.</li>';
+        return;
+      }
+      changes.forEach((c) => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        const delta = Number(c.delta_rent_min);
+        const cls = delta < 0 ? "delta-down" : "delta-up";
+        const sign = delta > 0 ? "+" : "";
+        btn.innerHTML =
+          `<strong>${c.unit_number}</strong> · ${c.apartment_name}` +
+          `<span class="meta">${fmtMoney(c.prev_rent_min)} → ${fmtMoney(c.latest_rent_min)} ` +
+          `<span class="${cls}">${sign}${Math.round(delta)}</span></span>`;
+        btn.addEventListener("click", () => {
+          closeDrawers();
+          if (c.zip) selectZip(c.zip, null).then(() => selectApartment(c.apartment_id, c.apartment_name, null));
+        });
+        li.appendChild(btn);
+        ul.appendChild(li);
+      });
+    }
+
+    function renderWatchlist(watchlist) {
+      const ul = document.getElementById("alert-watch-list");
+      ul.innerHTML = "";
+      if (!watchlist.length) {
+        ul.innerHTML =
+          '<li class="empty-state">Open a unit and set a target price to watch.</li>';
+        return;
+      }
+      watchlist.forEach((w) => {
+        const triggered =
+          w.direction === "below"
+            ? w.latest_rent_min != null && Number(w.latest_rent_min) <= Number(w.target_rent)
+            : w.latest_rent_min != null && Number(w.latest_rent_min) >= Number(w.target_rent);
+        const li = document.createElement("li");
+        if (triggered) li.classList.add("triggered");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        const dirLabel = w.direction === "below" ? "≤" : "≥";
+        btn.innerHTML =
+          `<strong>${w.unit_number}</strong> · ${w.apartment_name}` +
+          `<span class="meta">Target ${dirLabel} ${fmtMoney(w.target_rent)} · now ${fmtMoney(w.latest_rent_min)}` +
+          `${triggered ? ' · <span class="delta-up">hit</span>' : ""}</span>`;
+        btn.addEventListener("click", () => {
+          closeDrawers();
+          if (w.zip) selectZip(w.zip, null).then(() => selectApartment(w.apartment_id, w.apartment_name, null));
+        });
+        li.appendChild(btn);
+        const actions = document.createElement("div");
+        actions.className = "row-actions";
+        const del = document.createElement("button");
+        del.type = "button";
+        del.textContent = "Remove";
+        del.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          await fetchJson(`/api/price-alerts/${w.alert_id}/`, {
+            method: "DELETE",
+            headers: { "X-CSRFToken": csrfToken() },
+          });
+          loadPriceAlerts();
+        });
+        actions.appendChild(del);
+        li.appendChild(actions);
+        ul.appendChild(li);
+      });
+    }
+
+    function updateAlertBadge() {
+      const badge = document.getElementById("alert-badge");
+      const n = alertPayload.triggered_count || 0;
+      const watch = (alertPayload.watchlist || []).length;
+      const show = n > 0 ? n : watch > 0 ? watch : 0;
+      if (show > 0) {
+        badge.textContent = String(n > 0 ? n : watch);
+        badge.classList.add("show");
+      } else {
+        badge.classList.remove("show");
+      }
+    }
+
+    async function loadPriceAlerts() {
+      alertPayload = await fetchJson("/api/price-alerts/");
+      const range = document.getElementById("alert-date-range");
+      if (alertPayload.latest_date && alertPayload.prev_date) {
+        range.textContent = `${alertPayload.prev_date} → ${alertPayload.latest_date}`;
+      } else if (alertPayload.latest_date) {
+        range.textContent = `Latest: ${alertPayload.latest_date}`;
+      }
+      renderAlertChanges(alertPayload.changes || []);
+      renderWatchlist(alertPayload.watchlist || []);
+      updateAlertBadge();
+    }
+
+    async function saveUnitAlert() {
+      const msg = document.getElementById("alert-form-msg");
+      msg.textContent = "";
+      if (!selectedApartmentId || !selectedUnitNumber) {
+        msg.textContent = "Select a unit first.";
+        return;
+      }
+      try {
+        await fetchJson("/api/price-alerts/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken(),
+          },
+          body: JSON.stringify({
+            apartment_id: selectedApartmentId,
+            unit_number: selectedUnitNumber,
+            target_rent: document.getElementById("alert-target").value,
+            direction: document.getElementById("alert-direction").value,
+          }),
+        });
+        msg.textContent = "Saved to watchlist.";
+        loadPriceAlerts();
+      } catch (err) {
+        msg.textContent = String(err);
+      }
+    }
+
+    function closeDrawers() {
+      document.getElementById("alert-drawer").classList.remove("open");
+      document.getElementById("feed-drawer").classList.remove("open");
+      document.getElementById("drawer-backdrop").classList.remove("open");
+      document.getElementById("alert-drawer").setAttribute("aria-hidden", "true");
+      document.getElementById("feed-drawer").setAttribute("aria-hidden", "true");
+    }
+
+    function openAlertDrawer() {
+      closeDrawers();
+      document.getElementById("alert-drawer").classList.add("open");
+      document.getElementById("drawer-backdrop").classList.add("open");
+      document.getElementById("alert-drawer").setAttribute("aria-hidden", "false");
+    }
+
+    function openFeedDrawer() {
+      closeDrawers();
+      renderFeedDrawer();
+      document.getElementById("feed-drawer").classList.add("open");
+      document.getElementById("drawer-backdrop").classList.add("open");
+      document.getElementById("feed-drawer").setAttribute("aria-hidden", "false");
+    }
+
+    function setAlertTab(tab) {
+      document.querySelectorAll(".drawer-tabs button").forEach((b) => {
+        b.classList.toggle("active", b.dataset.alertTab === tab);
+      });
+      document.getElementById("alert-changes-list").classList.toggle("hidden", tab !== "changes");
+      document.getElementById("alert-watch-list").classList.toggle("hidden", tab !== "watch");
+    }
+
+    document.getElementById("btn-feed").addEventListener("click", openFeedDrawer);
+    document.getElementById("btn-alerts").addEventListener("click", openAlertDrawer);
+    document.getElementById("feed-drawer-close").addEventListener("click", closeDrawers);
+    document.getElementById("drawer-close").addEventListener("click", closeDrawers);
+    document.getElementById("drawer-backdrop").addEventListener("click", closeDrawers);
+    document.getElementById("alert-save").addEventListener("click", saveUnitAlert);
+    document.querySelectorAll(".drawer-tabs button").forEach((b) => {
+      b.addEventListener("click", () => setAlertTab(b.dataset.alertTab));
+    });
+
+    initMap();
+    updateExploreChrome();
+    Promise.all([loadSummary(), loadMap(), loadPriceAlerts()]).catch((err) => {
+      document.body.insertAdjacentHTML(
+        "beforeend",
+        `<p style="color:#f87171;padding:1rem">${err}</p>`
+      );
+    });
+  </script>
+</body>
+</html>

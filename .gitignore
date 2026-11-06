@@ -39,6 +39,7 @@ staticfiles/
 .env.*
 *.pem
 credentials.json
+creds/
 
 # IDE
 .idea/
@@ -49,3 +50,17 @@ credentials.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Catalog / scratch spreadsheets (keep locally or on Drive; pass path to import scripts)
+*.csv
+
+# Local scrape / one-off artifacts (not part of Django app)
+/merged_*.json
+/*_by_building.json
+/tf-cornerstone_*.json
+/data/*.log
+/apartment_schema.dump
+/apartment_schema*.sql
+
+# Stray duplicate package dir (use modules/)
+/models/

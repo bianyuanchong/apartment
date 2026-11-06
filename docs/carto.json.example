@@ -1,0 +1,4 @@
+{
+  "api_key": "YOUR_CARTO_BASEMAPS_KEY",
+  "style": "voyager"
+}

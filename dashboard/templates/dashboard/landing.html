@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en" id="html-root">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" id="meta-desc" content="Daily rent intelligence for multifamily portfolios — coverage, history, and price alerts in one place." />
+  <title id="doc-title">Rent Ledger — Portfolio rent intelligence</title>
+  <script>
+    try {
+      var _saved = localStorage.getItem("rent-ledger-lang");
+      var _langs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "en"];
+      var _zh = _saved === "zh" || (!_saved && _saved !== "en" && _langs.some(function (l) { return String(l).toLowerCase().indexOf("zh") === 0; }));
+      if (_saved === "en") _zh = false;
+      if (_zh) document.documentElement.lang = "zh-CN";
+    } catch (e) {}
+  </script>
+  <style>
+    :root {
+      --bg: #000;
+      --fg: #f5f5f7;
+      --muted: #a1a1a6;
+      --accent: #2997ff;
+      --accent2: #64d2ff;
+      --panel: #161617;
+      --line: rgba(255, 255, 255, 0.12);
+      --nav-h: 3rem;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--nav-h);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(1rem, 4vw, 2.5rem);
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.3s, background 0.3s;
+    }
+    .nav.scrolled {
+      border-bottom-color: var(--line);
+      background: rgba(0, 0, 0, 0.82);
+    }
+    .nav-logo { font-size: 0.95rem; font-weight: 600; letter-spacing: -0.02em; color: var(--fg); }
+    .nav-links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.82rem; }
+    .nav-links a { color: var(--muted); text-decoration: none; }
+    .nav-links a:hover { color: var(--fg); text-decoration: none; }
+    .nav-cta {
+      color: var(--fg) !important;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+    }
+    .btn-lang {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 0.3rem 0.65rem;
+      font-size: 0.78rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-lang:hover { color: var(--fg); border-color: rgba(255, 255, 255, 0.25); }
+
+    .hero {
+      height: 100vh;
+      min-height: 560px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: calc(var(--nav-h) + 1rem) 1.5rem 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-glow {
+      position: absolute;
+      width: min(100vw, 800px);
+      height: min(100vw, 800px);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(41, 151, 255, 0.4) 0%, transparent 65%);
+      filter: blur(50px);
+      pointer-events: none;
+      will-change: transform, opacity;
+    }
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      will-change: transform, opacity;
+    }
+    .hero-eyebrow {
+      font-size: 0.8rem;
+      color: var(--accent2);
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin: 0 0 1rem;
+    }
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(2.6rem, 8vw, 5rem);
+      font-weight: 700;
+      letter-spacing: -0.045em;
+      line-height: 1.02;
+    }
+    .hero-lead {
+      margin: 1.25rem auto 0;
+      max-width: 34rem;
+      font-size: clamp(1.05rem, 2.2vw, 1.3rem);
+      line-height: 1.45;
+      color: var(--muted);
+    }
+    .hero-actions {
+      margin-top: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+    .hero-scroll-hint {
+      position: absolute;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      opacity: 0.7;
+      animation: bob 2s ease-in-out infinite;
+    }
+    @keyframes bob {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(6px); }
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.65rem 1.35rem;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      text-decoration: none !important;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #0077ed; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid rgba(41, 151, 255, 0.45);
+    }
+
+    .stats-strip {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 2rem 3rem;
+      padding: 2rem 1.5rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .stat-num {
+      font-size: clamp(2rem, 5vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-label { font-size: 0.82rem; color: var(--muted); margin-top: 0.2rem; }
+    .stat-asof {
+      width: 100%;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: -0.5rem;
+    }
+
+    .live-preview {
+      padding: 2.5rem 1.5rem 3rem;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+    .live-preview h2 {
+      text-align: center;
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin: 0 0 1.5rem;
+      color: var(--muted);
+      letter-spacing: -0.02em;
+    }
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1.75rem;
+    }
+    .chip {
+      font-size: 0.82rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      background: rgba(41, 151, 255, 0.12);
+      border: 1px solid rgba(41, 151, 255, 0.35);
+      color: var(--fg);
+    }
+    .chip span { color: var(--muted); }
+    .live-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 720px) { .live-grid { grid-template-columns: 1fr; } }
+    .live-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 1rem 1.1rem;
+    }
+    .live-card h3 {
+      margin: 0 0 0.75rem;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    .live-list { list-style: none; margin: 0; padding: 0; font-size: 0.88rem; }
+    .live-list li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+    .live-list li:last-child { border-bottom: none; }
+    .live-list .muted { color: var(--muted); font-size: 0.8rem; }
+    .down { color: #4ade80; }
+    .up { color: #f87171; }
+
+    .story { position: relative; }
+    .story-track { height: 450vh; }
+    .story-sticky {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .story-inner {
+      width: min(1240px, 96vw);
+      display: grid;
+      grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.22fr);
+      gap: clamp(1.75rem, 4vw, 3.25rem);
+      align-items: center;
+    }
+    @media (max-width: 860px) {
+      .story-inner { grid-template-columns: 1fr; }
+      .story-track { height: 360vh; }
+    }
+    .story-copy { display: flex; flex-direction: column; }
+    .story-copy-window {
+      overflow: hidden;
+      height: clamp(9.5rem, 22vh, 12.5rem);
+    }
+    .story-copy-track {
+      will-change: transform;
+    }
+    .story-beat {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-sizing: border-box;
+      padding: 0.15rem 0;
+    }
+    .story-beat h2 {
+      margin: 0;
+      font-size: clamp(2.1rem, 5vw, 3.4rem);
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      line-height: 1.06;
+    }
+    .story-beat p {
+      margin: 1rem 0 0;
+      font-size: clamp(1rem, 2vw, 1.15rem);
+      color: var(--muted);
+      line-height: 1.55;
+      max-width: 28rem;
+    }
+    .story-progress {
+      display: flex;
+      gap: 0.45rem;
+      margin-top: 1.75rem;
+    }
+    .story-progress i {
+      display: block;
+      height: 3px;
+      width: 2.5rem;
+      border-radius: 2px;
+      background: var(--line);
+      overflow: hidden;
+      position: relative;
+    }
+    .story-visual-shell {
+      border-radius: 28px;
+      background: linear-gradient(145deg, #1c1c1e 0%, #0d0d0f 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 2px 0 rgba(255, 255, 255, 0.06) inset,
+        0 50px 100px rgba(0, 0, 0, 0.65);
+      overflow: hidden;
+    }
+    .story-visual-window {
+      aspect-ratio: 4 / 3.15;
+      min-height: clamp(260px, 36vw, 400px);
+      overflow: hidden;
+    }
+    .story-visual-track {
+      will-change: transform;
+    }
+    .story-frame {
+      display: flex;
+      flex-direction: column;
+      padding: 1.25rem;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+    .frame-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0.65rem;
+    }
+    .landing-mini-map {
+      flex: 1;
+      min-height: 160px;
+      border-radius: 14px;
+      overflow: hidden;
+      background-color: #06080f;
+      background-image:
+        radial-gradient(ellipse 85% 70% at 50% 45%, rgba(41, 151, 255, 0.14) 0%, transparent 58%),
+        linear-gradient(rgba(41, 151, 255, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(41, 151, 255, 0.045) 1px, transparent 1px);
+      background-size: 100% 100%, 26px 26px, 26px 26px;
+      /* Display-only map: do not capture wheel/touch (Leaflet sets touch-action: none). */
+      pointer-events: none;
+      touch-action: pan-y;
+    }
+    .landing-coverage-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .landing-coverage-svg .zip-polygon.context {
+      stroke: rgba(148, 163, 184, 0.22);
+      fill: rgba(255, 255, 255, 0.035);
+    }
+    .landing-coverage-svg .zip-polygon.tracked {
+      filter: drop-shadow(0 0 5px rgba(41, 151, 255, 0.45));
+    }
+    .landing-coverage-svg .zip-pin {
+      filter: drop-shadow(0 0 6px rgba(74, 222, 128, 0.75));
+    }
+
+    .mock-chart {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .mock-chart-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+      flex-shrink: 0;
+    }
+    .rent-line-chart {
+      flex: 1;
+      width: 100%;
+      min-height: 140px;
+      display: block;
+    }
+    .rent-line-chart text {
+      fill: #a1a1a6;
+      font-size: 10px;
+      font-family: inherit;
+    }
+    .rent-line-chart .price-label {
+      fill: #f5f5f7;
+      font-size: 9px;
+      font-weight: 600;
+    }
+    .mock-alert { flex: 1; display: flex; flex-direction: column; gap: 0.55rem; justify-content: center; }
+    .mock-alert-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      padding: 0.7rem 0.85rem;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+    .mock-alert-row .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      margin-top: 0.35rem;
+      flex-shrink: 0;
+    }
+    .mock-alert-row.down .dot { background: #4ade80; }
+    .mock-alert-row.up .dot { background: #f87171; }
+
+    .features {
+      padding: clamp(4rem, 10vw, 7rem) 1.5rem;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+    .features h2 {
+      text-align: center;
+      font-size: clamp(2rem, 4vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin: 0 0 2.5rem;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+    .feature-card {
+      padding: 1.5rem;
+      border-radius: 18px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.65s ease, transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .feature-card.visible { opacity: 1; transform: none; }
+    .feature-card h3 { margin: 0 0 0.4rem; font-size: 1.05rem; }
+    .feature-card p { margin: 0; font-size: 0.9rem; color: var(--muted); line-height: 1.5; }
+
+    .cta {
+      text-align: center;
+      padding: clamp(4rem, 12vw, 8rem) 1.5rem 4rem;
+    }
+    .cta h2 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+    }
+    .cta p { margin: 1rem auto 1.75rem; max-width: 26rem; color: var(--muted); }
+    footer {
+      padding: 1.5rem;
+      border-top: 1px solid var(--line);
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-scroll-hint { animation: none; }
+      .story-track { height: auto; }
+      .story-sticky { position: relative; height: auto; padding: 3rem 0; }
+      .story-copy-window, .story-visual-window { height: auto; overflow: visible; }
+      .story-copy-track, .story-visual-track { transform: none !important; height: auto !important; }
+      .story-beat, .story-frame { height: auto !important; margin-bottom: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  {% load dashboard_extras %}
+  <nav class="nav" id="nav">
+    <span class="nav-logo">Rent Ledger</span>
+    <div class="nav-links">
+      <a href="#live" data-i18n="nav_snapshot">Snapshot</a>
+      <a href="#story" data-i18n="nav_product">Product</a>
+      <button type="button" class="btn-lang" id="lang-toggle" aria-label="Switch language">中文</button>
+      <a href="{% url 'dashboard-index' %}" class="nav-cta" data-i18n="nav_demo">Live demo</a>
+    </div>
+  </nav>
+
+  <header class="hero" id="hero">
+    <div class="hero-glow" id="hero-glow"></div>
+    <div class="hero-inner" id="hero-inner">
+      <p class="hero-eyebrow" data-i18n="hero_eyebrow">Portfolio rent intelligence</p>
+      <h1 data-i18n-html="hero_title">Every unit.<br />Every morning.</h1>
+      <p class="hero-lead" data-i18n="hero_lead">
+        Coverage, daily rents, and price moves — one calm workspace for operators.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{% url 'dashboard-index' %}" data-i18n="hero_cta_primary">Explore the demo</a>
+        <a class="btn btn-ghost" href="#story" data-i18n="hero_cta_secondary">See how it works</a>
+      </div>
+    </div>
+    <span class="hero-scroll-hint" data-i18n="hero_scroll">Scroll</span>
+  </header>
+
+  <section class="stats-strip">
+    <div class="stat-item">
+      <div class="stat-num" data-count="{{ stats.apartment_count }}">0</div>
+      <div class="stat-label" data-i18n="stat_buildings">Buildings</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" data-count="{{ stats.zip_count }}">0</div>
+      <div class="stat-label" data-i18n="stat_zips">ZIP regions</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" data-count="{{ stats.unit_count }}">0</div>
+      <div class="stat-label" data-i18n="stat_units">Units tracked</div>
+    </div>
+    {% if stats.latest_date %}
+    <p class="stat-asof"><span data-i18n="stat_asof">Latest daily snapshot</span> · {{ stats.latest_date }}</p>
+    {% endif %}
+  </section>
+
+  <section class="live-preview" id="live">
+    <h2 data-i18n="live_heading">From your live portfolio</h2>
+    {% if top_zips %}
+    <div class="chip-row">
+      {% for z in top_zips %}
+      <span class="chip">ZIP {{ z.zip }} <span>· {{ z.unit_count }} <span data-i18n="word_units">units</span></span></span>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="live-grid">
+      <div class="live-card">
+        <h3 data-i18n="live_buildings_title">Top buildings by inventory</h3>
+        <ul class="live-list">
+          {% for b in sample_buildings %}
+          <li>
+            <span>{{ b.name }}<br /><span class="muted">{{ b.zip }}</span></span>
+            <span>{{ b.unit_count }} <span data-i18n="word_units">units</span></span>
+          </li>
+          {% empty %}
+          <li class="muted" data-i18n="live_buildings_empty">No building data yet.</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="live-card">
+        <h3>
+          <span data-i18n="live_moves_title">Recent rent moves</span>{% if stats.latest_date %} ({{ stats.latest_date }}){% endif %}
+        </h3>
+        <ul class="live-list">
+          {% for m in price_moves %}
+          <li>
+            <span>{{ m.unit_number }} · {{ m.apartment_name }}</span>
+            <span class="{% if m.delta_rent_min < 0 %}down{% else %}up{% endif %}">
+              {% if m.delta_rent_min < 0 %}−{% else %}+{% endif %}{{ m.delta_rent_min|usd }}
+            </span>
+          </li>
+          {% empty %}
+          <li class="muted" data-i18n="live_moves_empty">Need two snapshot dates to show day-over-day changes.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="story" id="story">
+    <div class="story-track" id="story-track">
+      <div class="story-sticky">
+        <div class="story-inner">
+          <div class="story-copy">
+            <div class="story-copy-window" id="story-copy-window">
+              <div class="story-copy-track" id="story-copy-track">
+                <div class="story-beat" data-beat="0">
+                  <h2 data-i18n="story_0_title">See where you play.</h2>
+                  <p data-i18n="story_0_body">Shaded ZIPs and geocoded pins from your actual catalog — not a generic map mockup.</p>
+                </div>
+                <div class="story-beat" data-beat="1">
+                  <h2 data-i18n="story_1_title">Rent, over time.</h2>
+                  <p data-i18n="story_1_body">Daily min/max per unit, pulled from the same feed that powers your operator app.</p>
+                </div>
+                <div class="story-beat" data-beat="2">
+                  <h2 data-i18n="story_2_title">Move first on price.</h2>
+                  <p data-i18n="story_2_body">Real day-over-day deltas from the last two ingested snapshots, plus custom watchlists.</p>
+                </div>
+              </div>
+            </div>
+            <div class="story-progress" aria-hidden="true">
+              <i id="prog-0"></i><i id="prog-1"></i><i id="prog-2"></i>
+            </div>
+          </div>
+          <div class="story-visual-shell" id="story-visual-shell" data-step="0">
+            <div class="story-visual-window" id="story-visual-window">
+              <div class="story-visual-track" id="story-visual-track">
+              <div class="story-frame" data-frame="0">
+                <span class="frame-label" data-i18n="frame_0_label">Coverage · sample pins</span>
+                <div class="landing-mini-map" role="img" aria-label="ZIP coverage map">
+                  <svg id="landing-coverage-svg" class="landing-coverage-svg" preserveAspectRatio="xMidYMid meet"></svg>
+                </div>
+              </div>
+              <div class="story-frame" data-frame="1">
+                <span class="frame-label" data-i18n="frame_1_label">History · live unit</span>
+                <div class="mock-chart">
+                  {% if featured_chart_label %}
+                  <div class="mock-chart-label">{{ featured_chart_label }}</div>
+                  {% endif %}
+                  <svg id="featured-rent-line" class="rent-line-chart" preserveAspectRatio="none"></svg>
+                </div>
+              </div>
+              <div class="story-frame" data-frame="2">
+                <span class="frame-label" data-i18n="frame_2_label">Alerts · latest deltas</span>
+                <div class="mock-alert">
+                  {% for m in price_moves|slice:":3" %}
+                  <div class="mock-alert-row {% if m.delta_rent_min < 0 %}down{% else %}up{% endif %}">
+                    <span class="dot"></span>
+                    <span>
+                      <strong>{{ m.unit_number }}</strong> · {{ m.apartment_name }}<br />
+                      {{ m.prev_rent_min|usd }} → {{ m.latest_rent_min|usd }}
+                      <strong class="{% if m.delta_rent_min < 0 %}down{% else %}up{% endif %}">
+                        ({% if m.delta_rent_min < 0 %}−{% else %}+{% endif %}{{ m.delta_rent_min|usd }})
+                      </strong>
+                    </span>
+                  </div>
+                  {% empty %}
+                  <div class="mock-alert-row down">
+                    <span class="dot"></span>
+                    <span data-i18n="frame_alerts_empty">Connect daily ingest to populate change alerts.</span>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features" id="features">
+    <h2 data-i18n="features_heading">Built for clarity.</h2>
+    <div class="feature-grid">
+      <article class="feature-card"><h3 data-i18n="feat_0_title">Daily snapshots</h3><p data-i18n="feat_0_body">One row per unit per day in PostgreSQL — rent, beds, availability.</p></article>
+      <article class="feature-card"><h3 data-i18n="feat_1_title">Geocoded portfolio</h3><p data-i18n="feat_1_body">Buildings placed on the map; ZIP shading shows coverage.</p></article>
+      <article class="feature-card"><h3 data-i18n="feat_2_title">Price alerts</h3><p data-i18n="feat_2_body">Automatic change detection and target-price watchlists.</p></article>
+      <article class="feature-card"><h3 data-i18n="feat_3_title">Operator workspace</h3><p data-i18n="feat_3_body">Map-first drill-down without spreadsheet noise.</p></article>
+    </div>
+  </section>
+
+  <section class="cta">
+    <h2 data-i18n="cta_title">Walk the live demo.</h2>
+    <p data-i18n="cta_body">Same data as above — interactive map, units, and alerts.</p>
+    <a class="btn btn-primary" href="{% url 'dashboard-index' %}" data-i18n="cta_btn">Open workspace</a>
+  </section>
+
+  <footer>
+    Rent Ledger · <a href="{% url 'dashboard-index' %}" data-i18n="footer_login">Operator login</a>
+  </footer>
+
+  {{ coverage_geojson|json_script:"landing-coverage-data" }}
+  {{ map_pins_geo|json_script:"landing-pins-data" }}
+  {{ featured_chart_series|json_script:"featured-chart-data" }}
+  <script>
+    const I18N = {
+      en: {
+        doc_title: "Rent Ledger — Portfolio rent intelligence",
+        meta_desc: "Daily rent intelligence for multifamily portfolios — coverage, history, and price alerts in one place.",
+        nav_snapshot: "Snapshot",
+        nav_product: "Product",
+        nav_demo: "Live demo",
+        hero_eyebrow: "Portfolio rent intelligence",
+        hero_title: "Every unit.<br />Every morning.",
+        hero_lead: "Coverage, daily rents, and price moves — one calm workspace for operators.",
+        hero_cta_primary: "Explore the demo",
+        hero_cta_secondary: "See how it works",
+        hero_scroll: "Scroll",
+        stat_buildings: "Buildings",
+        stat_zips: "ZIP regions",
+        stat_units: "Units tracked",
+        stat_asof: "Latest daily snapshot",
+        live_heading: "From your live portfolio",
+        word_units: "units",
+        live_buildings_title: "Top buildings by inventory",
+        live_buildings_empty: "No building data yet.",
+        live_moves_title: "Recent rent moves",
+        live_moves_empty: "Need two snapshot dates to show day-over-day changes.",
+        story_0_title: "See where you play.",
+        story_0_body: "Shaded ZIPs and geocoded pins from your actual catalog — not a generic map mockup.",
+        story_1_title: "Rent, over time.",
+        story_1_body: "Daily min/max per unit, pulled from the same feed that powers your operator app.",
+        story_2_title: "Move first on price.",
+        story_2_body: "Real day-over-day deltas from the last two ingested snapshots, plus custom watchlists.",
+        frame_0_label: "Coverage · sample pins",
+        frame_1_label: "History · live unit",
+        frame_2_label: "Alerts · latest deltas",
+        frame_alerts_empty: "Connect daily ingest to populate change alerts.",
+        features_heading: "Built for clarity.",
+        feat_0_title: "Daily snapshots",
+        feat_0_body: "One row per unit per day in PostgreSQL — rent, beds, availability.",
+        feat_1_title: "Geocoded portfolio",
+        feat_1_body: "Buildings placed on the map; ZIP shading shows coverage.",
+        feat_2_title: "Price alerts",
+        feat_2_body: "Automatic change detection and target-price watchlists.",
+        feat_3_title: "Operator workspace",
+        feat_3_body: "Map-first drill-down without spreadsheet noise.",
+        cta_title: "Walk the live demo.",
+        cta_body: "Same data as above — interactive map, units, and alerts.",
+        cta_btn: "Open workspace",
+        footer_login: "Operator login",
+      },
+      zh: {
+        doc_title: "Rent Ledger — 公寓租金数据平台",
+        meta_desc: "面向多楼栋租赁资产：覆盖地图、每日租金与调价提醒，统一查看与分析。",
+        nav_snapshot: "数据概览",
+        nav_product: "产品能力",
+        nav_demo: "在线演示",
+        hero_eyebrow: "公寓租赁数据平台",
+        hero_title: "全部房源<br />每日同步",
+        hero_lead: "覆盖区域、挂牌租金与调价动态，在地图上集中呈现。为运营团队设计，信息分层清晰。",
+        hero_cta_primary: "查看演示",
+        hero_cta_secondary: "了解产品",
+        hero_scroll: "向下滚动",
+        stat_buildings: "在管项目",
+        stat_zips: "覆盖邮编数",
+        stat_units: "跟踪房源",
+        stat_asof: "最新数据日期",
+        live_heading: "来自您在管资产的真实数据",
+        word_units: "套",
+        live_buildings_title: "房源规模前列项目",
+        live_buildings_empty: "暂无项目数据。",
+        live_moves_title: "近期租金变动",
+        live_moves_empty: "需至少两个日期的数据快照，方可计算日环比。",
+        story_0_title: "覆盖范围，一目了然",
+        story_0_body: "按邮编区域展示覆盖范围，项目坐标按地址定位上图，数据来源于您的资产台账，而非示意数据。",
+        story_1_title: "租金走势，按日留存",
+        story_1_body: "每套房源保留当日最低与最高挂牌租金，与运营后台共用同一数据源。",
+        story_2_title: "调价信息，及时掌握",
+        story_2_body: "系统自动对比最近两次数据快照的涨跌，并支持设置目标租金提醒。",
+        frame_0_label: "覆盖范围 · 项目点位",
+        frame_1_label: "历史走势 · 真实房源",
+        frame_2_label: "价格提醒 · 最新变动",
+        frame_alerts_empty: "完成每日数据同步后，将在此展示变动明细。",
+        features_heading: "简洁、可依赖",
+        feat_0_title: "日度数据快照",
+        feat_0_body: "按房源、按日留存记录，包含租金、户型与出租状态，便于追溯。",
+        feat_1_title: "地图可视化",
+        feat_1_body: "项目地理坐标准确落图，邮编片区区分展示，覆盖边界清晰可辨。",
+        feat_2_title: "调价提醒",
+        feat_2_body: "自动汇总日环比变动，支持配置目标价与关注列表。",
+        feat_3_title: "运营工作台",
+        feat_3_body: "地图入口逐级下钻：邮编、项目、房源，减少在表格间切换。",
+        cta_title: "欢迎体验在线演示",
+        cta_body: "演示环境使用与上文相同的真实数据，支持地图交互、房源查询与提醒配置。",
+        cta_btn: "进入工作台",
+        footer_login: "运营端登录",
+      },
+    };
+
+    const LANG_KEY = "rent-ledger-lang";
+
+    function detectLocale() {
+      const saved = localStorage.getItem(LANG_KEY);
+      if (saved === "en" || saved === "zh") return saved;
+      const langs = navigator.languages && navigator.languages.length
+        ? navigator.languages
+        : [navigator.language || "en"];
+      const prefersZh = langs.some((l) => String(l).toLowerCase().startsWith("zh"));
+      return prefersZh ? "zh" : "en";
+    }
+
+    let locale = detectLocale();
+
+    function t(key) {
+      return (I18N[locale] && I18N[locale][key]) || I18N.en[key] || key;
+    }
+
+    function applyLocale() {
+      document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
+      const titleEl = document.getElementById("doc-title");
+      if (titleEl) titleEl.textContent = t("doc_title");
+      const meta = document.getElementById("meta-desc");
+      if (meta) meta.setAttribute("content", t("meta_desc"));
+
+      document.querySelectorAll("[data-i18n]").forEach((el) => {
+        el.textContent = t(el.dataset.i18n);
+      });
+      document.querySelectorAll("[data-i18n-html]").forEach((el) => {
+        el.innerHTML = t(el.dataset.i18nHtml);
+      });
+
+      const toggle = document.getElementById("lang-toggle");
+      if (toggle) {
+        toggle.textContent = locale === "zh" ? "EN" : "中文";
+        toggle.setAttribute("aria-label", locale === "zh" ? "Switch to English" : "切换为中文");
+      }
+    }
+
+    document.getElementById("lang-toggle").addEventListener("click", () => {
+      locale = locale === "zh" ? "en" : "zh";
+      localStorage.setItem(LANG_KEY, locale);
+      applyLocale();
+    });
+    applyLocale();
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const nav = document.getElementById("nav");
+    const hero = document.getElementById("hero");
+    const heroInner = document.getElementById("hero-inner");
+    const heroGlow = document.getElementById("hero-glow");
+    const storyTrack = document.getElementById("story-track");
+    const storyCopyWindow = document.getElementById("story-copy-window");
+    const storyCopyTrack = document.getElementById("story-copy-track");
+    const storyVisualShell = document.getElementById("story-visual-shell");
+    const storyVisualWindow = document.getElementById("story-visual-window");
+    const storyVisualTrack = document.getElementById("story-visual-track");
+    const beats = storyCopyTrack.querySelectorAll(".story-beat");
+    const frames = storyVisualTrack.querySelectorAll(".story-frame");
+    const progBars = [0, 1, 2].map((i) => document.getElementById(`prog-${i}`));
+    const storySteps = beats.length;
+    let lastChartStep = -1;
+
+    function clamp(v, lo, hi) {
+      return Math.max(lo, Math.min(hi, v));
+    }
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+    function smoothstep(edge0, edge1, x) {
+      const t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
+      return t * t * (3 - 2 * t);
+    }
+    function layoutStoryPanels() {
+      if (!storyCopyWindow || !storyVisualWindow) return;
+      const copyH = storyCopyWindow.clientHeight;
+      beats.forEach((b) => {
+        b.style.height = `${copyH}px`;
+      });
+      storyCopyTrack.style.height = `${copyH * storySteps}px`;
+
+      const visH = storyVisualWindow.clientHeight;
+      frames.forEach((f) => {
+        f.style.height = `${visH}px`;
+      });
+      storyVisualTrack.style.height = `${visH * storySteps}px`;
+    }
+    layoutStoryPanels();
+    window.addEventListener("resize", () => {
+      layoutStoryPanels();
+      drawFeaturedLineChart(false);
+      drawLandingCoverageSvg();
+    });
+
+    function readJsonScript(id, fallback) {
+      const el = document.getElementById(id);
+      if (!el) return fallback;
+      try {
+        return JSON.parse(el.textContent);
+      } catch {
+        return fallback;
+      }
+    }
+
+    function fmtRent(v) {
+      if (v == null || Number.isNaN(Number(v))) return "—";
+      return "$" + Math.round(Number(v)).toLocaleString(undefined, { maximumFractionDigits: 0 });
+    }
+
+    function forEachGeoCoord(geometry, fn) {
+      if (!geometry) return;
+      const { type, coordinates } = geometry;
+      if (type === "Polygon") {
+        coordinates.forEach((ring) => ring.forEach(([lng, lat]) => fn(lng, lat)));
+      } else if (type === "MultiPolygon") {
+        coordinates.forEach((poly) => poly.forEach((ring) => ring.forEach(([lng, lat]) => fn(lng, lat))));
+      }
+    }
+
+    function geoFeatureBounds(features) {
+      let minLng = Infinity;
+      let minLat = Infinity;
+      let maxLng = -Infinity;
+      let maxLat = -Infinity;
+      features.forEach((f) => {
+        forEachGeoCoord(f.geometry, (lng, lat) => {
+          minLng = Math.min(minLng, lng);
+          minLat = Math.min(minLat, lat);
+          maxLng = Math.max(maxLng, lng);
+          maxLat = Math.max(maxLat, lat);
+        });
+      });
+      if (!Number.isFinite(minLng)) return null;
+      return { minLng, minLat, maxLng, maxLat };
+    }
+
+    function projectLngLat(lng, lat, bounds, width, height, pad) {
+      const lngSpan = bounds.maxLng - bounds.minLng || 0.01;
+      const latSpan = bounds.maxLat - bounds.minLat || 0.01;
+      const x = pad + ((lng - bounds.minLng) / lngSpan) * (width - 2 * pad);
+      const y = pad + ((bounds.maxLat - lat) / latSpan) * (height - 2 * pad);
+      return [x, y];
+    }
+
+    function geometryToPath(geometry, project) {
+      const parts = [];
+      const addRing = (ring) => {
+        ring.forEach(([lng, lat], i) => {
+          const [x, y] = project(lng, lat);
+          parts.push(`${i === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`);
+        });
+        parts.push("Z");
+      };
+      if (geometry.type === "Polygon") {
+        geometry.coordinates.forEach(addRing);
+      } else if (geometry.type === "MultiPolygon") {
+        geometry.coordinates.forEach((poly) => poly.forEach(addRing));
+      }
+      return parts.join(" ");
+    }
+
+    function drawLandingCoverageSvg() {
+      const svg = document.getElementById("landing-coverage-svg");
+      if (!svg) return;
+      const wrap = svg.parentElement;
+      const box = wrap?.getBoundingClientRect() || svg.getBoundingClientRect();
+      const w = Math.max(box.width, 320);
+      const h = Math.max(box.height, 200);
+      svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+
+      const cov = readJsonScript("landing-coverage-data", { type: "FeatureCollection", features: [] });
+      const features = cov?.features || [];
+      const pins = readJsonScript("landing-pins-data", []);
+      const ns = "http://www.w3.org/2000/svg";
+      svg.innerHTML = "";
+
+      if (!features.length) {
+        const t = document.createElementNS(ns, "text");
+        t.setAttribute("x", String(w / 2));
+        t.setAttribute("y", String(h / 2));
+        t.setAttribute("text-anchor", "middle");
+        t.setAttribute("fill", "#666");
+        t.textContent = "—";
+        svg.appendChild(t);
+        return;
+      }
+
+      const bounds = geoFeatureBounds(features);
+      if (!bounds) return;
+      const pad = Math.min(w, h) * 0.06;
+      const project = (lng, lat) => projectLngLat(lng, lat, bounds, w, h, pad);
+
+      const maxUnits = Math.max(...features.map((f) => f.properties?.unit_count || 0), 1);
+      const sorted = [...features].sort(
+        (a, b) => Number(a.properties?.tracked) - Number(b.properties?.tracked)
+      );
+
+      sorted.forEach((feat) => {
+        const p = feat.properties || {};
+        const tracked = !!p.tracked;
+        const path = document.createElementNS(ns, "path");
+        path.setAttribute("d", geometryToPath(feat.geometry, project));
+        path.setAttribute("class", tracked ? "zip-polygon tracked" : "zip-polygon context");
+        if (tracked) {
+          const t = maxUnits ? (p.unit_count || 0) / maxUnits : 0;
+          path.setAttribute("fill", `rgba(41, 151, 255, ${0.1 + t * 0.45})`);
+          path.setAttribute("stroke", t > 0.65 ? "#7dd3fc" : "#38bdf8");
+          path.setAttribute("stroke-width", t > 0.65 ? "1.6" : "1.15");
+        }
+        svg.appendChild(path);
+      });
+
+      pins.forEach((p) => {
+        if (p.lat == null || p.lng == null) return;
+        const [cx, cy] = project(p.lng, p.lat);
+        const dot = document.createElementNS(ns, "circle");
+        dot.setAttribute("cx", String(cx));
+        dot.setAttribute("cy", String(cy));
+        dot.setAttribute("r", "3.5");
+        dot.setAttribute("class", "zip-pin");
+        dot.setAttribute("fill", "#0a1628");
+        dot.setAttribute("stroke", "#4ade80");
+        dot.setAttribute("stroke-width", "2");
+        svg.appendChild(dot);
+      });
+    }
+
+    function drawFeaturedLineChart(animate) {
+      const svg = document.getElementById("featured-rent-line");
+      if (!svg) return;
+      const series = readJsonScript("featured-chart-data", []);
+      const box = svg.getBoundingClientRect();
+      const w = Math.max(box.width, 280);
+      const h = Math.max(box.height, 140);
+      svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+
+      const pad = { top: 26, right: 14, bottom: 22, left: 8 };
+      const innerW = w - pad.left - pad.right;
+      const innerH = h - pad.top - pad.bottom;
+
+      const ns = "http://www.w3.org/2000/svg";
+      svg.innerHTML = "";
+      const defs = document.createElementNS(ns, "defs");
+      const grad = document.createElementNS(ns, "linearGradient");
+      grad.setAttribute("id", "rent-line-fill");
+      grad.setAttribute("x1", "0");
+      grad.setAttribute("y1", "0");
+      grad.setAttribute("x2", "0");
+      grad.setAttribute("y2", "1");
+      const s0 = document.createElementNS(ns, "stop");
+      s0.setAttribute("offset", "0%");
+      s0.setAttribute("stop-color", "#2997ff");
+      s0.setAttribute("stop-opacity", "0.45");
+      const s1 = document.createElementNS(ns, "stop");
+      s1.setAttribute("offset", "100%");
+      s1.setAttribute("stop-color", "#2997ff");
+      s1.setAttribute("stop-opacity", "0");
+      grad.appendChild(s0);
+      grad.appendChild(s1);
+      defs.appendChild(grad);
+      svg.appendChild(defs);
+
+      if (!series.length) {
+        const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        t.setAttribute("x", String(w / 2));
+        t.setAttribute("y", String(h / 2));
+        t.setAttribute("text-anchor", "middle");
+        t.textContent = "—";
+        svg.appendChild(t);
+        return;
+      }
+
+      const rents = series.map((d) => Number(d.rent_min));
+      const minR = Math.min(...rents);
+      const maxR = Math.max(...rents);
+      const span = maxR - minR || 1;
+
+      const pts = series.map((d, i) => {
+        const x =
+          pad.left + (series.length === 1 ? innerW / 2 : (i / (series.length - 1)) * innerW);
+        const y = pad.top + innerH - ((Number(d.rent_min) - minR) / span) * innerH;
+        return { x, y, rent: d.rent_min, date: d.date };
+      });
+
+      const grid = document.createElementNS(ns, "line");
+      grid.setAttribute("x1", String(pad.left));
+      grid.setAttribute("x2", String(w - pad.right));
+      grid.setAttribute("y1", String(pad.top + innerH));
+      grid.setAttribute("y2", String(pad.top + innerH));
+      grid.setAttribute("stroke", "rgba(255,255,255,0.12)");
+      grid.setAttribute("stroke-width", "1");
+      svg.appendChild(grid);
+
+      const pathD =
+        pts.length === 1
+          ? `M ${pts[0].x} ${pts[0].y}`
+          : pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+
+      const path = document.createElementNS(ns, "path");
+      path.setAttribute("d", pathD);
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", "#2997ff");
+      path.setAttribute("stroke-width", "2.25");
+      path.setAttribute("stroke-linecap", "round");
+      path.setAttribute("stroke-linejoin", "round");
+      const areaD =
+        pathD +
+        ` L ${pts[pts.length - 1].x.toFixed(1)} ${pad.top + innerH}` +
+        ` L ${pts[0].x.toFixed(1)} ${pad.top + innerH} Z`;
+      const area = document.createElementNS(ns, "path");
+      area.setAttribute("d", areaD);
+      area.setAttribute("fill", "url(#rent-line-fill)");
+      area.setAttribute("opacity", "0.35");
+      svg.appendChild(area);
+      svg.appendChild(path);
+      if (animate && !reducedMotion && path.getTotalLength) {
+        const len = path.getTotalLength();
+        path.style.strokeDasharray = String(len);
+        path.style.strokeDashoffset = String(len);
+        path.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }], {
+          duration: 900,
+          fill: "forwards",
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+        });
+      }
+
+      pts.forEach((p, i) => {
+        const circle = document.createElementNS(ns, "circle");
+        circle.setAttribute("cx", String(p.x));
+        circle.setAttribute("cy", String(p.y));
+        circle.setAttribute("r", "3.5");
+        circle.setAttribute("fill", "#0a0a0c");
+        circle.setAttribute("stroke", "#2997ff");
+        circle.setAttribute("stroke-width", "2");
+        if (animate && !reducedMotion) {
+          circle.style.opacity = "0";
+          circle.animate([{ opacity: 0 }, { opacity: 1 }], {
+            duration: 400,
+            delay: 120 + i * 55,
+            fill: "forwards",
+          });
+        }
+        svg.appendChild(circle);
+
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("x", String(p.x));
+        label.setAttribute("y", String(p.y - 10));
+        label.setAttribute("text-anchor", "middle");
+        label.setAttribute("class", "price-label");
+        label.textContent = fmtRent(p.rent);
+        if (animate && !reducedMotion) {
+          label.style.opacity = "0";
+          label.animate([{ opacity: 0 }, { opacity: 1 }], {
+            duration: 400,
+            delay: 160 + i * 55,
+            fill: "forwards",
+          });
+        }
+        svg.appendChild(label);
+
+        if (i === 0 || i === pts.length - 1) {
+          const dateLbl = document.createElementNS(ns, "text");
+          dateLbl.setAttribute("x", String(p.x));
+          dateLbl.setAttribute("y", String(h - 4));
+          dateLbl.setAttribute("text-anchor", i === 0 ? "start" : "end");
+          const raw = p.date || "";
+          dateLbl.textContent = raw.length >= 10 ? raw.slice(5) : raw;
+          svg.appendChild(dateLbl);
+        }
+      });
+    }
+
+    function tick() {
+      const scrollY = window.scrollY;
+      nav.classList.toggle("scrolled", scrollY > 12);
+
+      const heroH = hero.offsetHeight || window.innerHeight;
+      const heroP = clamp(scrollY / heroH, 0, 1);
+      const heroEase = smoothstep(0, 1, heroP);
+      if (!reducedMotion) {
+        heroInner.style.transform = `translateY(${lerp(0, -90, heroEase)}px) scale(${lerp(1, 0.88, heroEase)})`;
+        heroInner.style.opacity = String(lerp(1, 0.15, heroEase));
+        heroGlow.style.transform = `scale(${lerp(1, 1.35, heroEase)}) translateY(${lerp(0, 40, heroEase)}px)`;
+        heroGlow.style.opacity = String(lerp(0.9, 0.25, heroEase));
+      }
+
+      if (storyTrack && storyCopyWindow && storyVisualWindow && !reducedMotion) {
+        const rect = storyTrack.getBoundingClientRect();
+        const trackH = storyTrack.offsetHeight - window.innerHeight;
+        if (trackH > 0) {
+          const p = clamp(-rect.top / trackH, 0, 1);
+          const maxStep = storySteps - 1;
+          const stepFloat = p * maxStep;
+          const copyH = storyCopyWindow.clientHeight;
+          const visH = storyVisualWindow.clientHeight;
+
+          storyCopyTrack.style.transform = `translate3d(0, ${-stepFloat * copyH}px, 0)`;
+          storyVisualTrack.style.transform = `translate3d(0, ${-stepFloat * visH}px, 0)`;
+
+          const activeStep = Math.min(maxStep, Math.round(stepFloat));
+          storyVisualShell.dataset.step = String(activeStep);
+          if (activeStep === 0 && lastChartStep !== 0) drawLandingCoverageSvg();
+          if (activeStep === 1 && lastChartStep !== 1) {
+            try {
+              drawFeaturedLineChart(true);
+            } catch (err) {
+              console.warn("featured chart", err);
+            }
+          }
+          lastChartStep = activeStep;
+
+          progBars.forEach((bar, i) => {
+            if (!bar) return;
+            let fill = bar.querySelector(".fill");
+            if (!fill) {
+              fill = document.createElement("span");
+              fill.className = "fill";
+              fill.style.cssText =
+                "position:absolute;inset:0;background:var(--accent);transform-origin:left;transform:scaleX(0)";
+              bar.appendChild(fill);
+            }
+            let w = 0;
+            if (stepFloat >= i + 1) w = 1;
+            else if (stepFloat > i) w = stepFloat - i;
+            fill.style.transform = `scaleX(${clamp(w, 0, 1)})`;
+          });
+        }
+      }
+
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    try {
+      drawLandingCoverageSvg();
+      drawFeaturedLineChart(false);
+    } catch (err) {
+      console.warn("landing visuals", err);
+    }
+    window.addEventListener("load", () => {
+      layoutStoryPanels();
+      drawLandingCoverageSvg();
+      drawFeaturedLineChart(false);
+    });
+
+    const countObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const el = entry.target;
+          const target = Number(el.dataset.count) || 0;
+          const duration = 1200;
+          const start = performance.now();
+          function step(now) {
+            const t = clamp((now - start) / duration, 0, 1);
+            const eased = 1 - Math.pow(1 - t, 3);
+            el.textContent = Math.round(target * eased).toLocaleString();
+            if (t < 1) requestAnimationFrame(step);
+          }
+          requestAnimationFrame(step);
+          countObserver.unobserve(el);
+        });
+      },
+      { threshold: 0.35 }
+    );
+    document.querySelectorAll(".stat-num[data-count]").forEach((el) => countObserver.observe(el));
+
+    const cardObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) entry.target.classList.add("visible");
+        });
+      },
+      { threshold: 0.12 }
+    );
+    document.querySelectorAll(".feature-card").forEach((card, i) => {
+      card.style.transitionDelay = `${i * 0.07}s`;
+      cardObserver.observe(card);
+    });
+
+  </script>
+</body>
+</html>
